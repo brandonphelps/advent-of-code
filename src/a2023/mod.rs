@@ -6,14 +6,13 @@ pub enum Error {
     MissingCalibration,
 }
 
-/// given an input string returns the first
-/// and last decimal digit found as a numeric,
-/// first digit from is tens place.
-fn get_calibration(row: &str) -> Result<u32> {
-    println!("Row: {}", row);
-    let mut digits = vec![];
+fn get_first_digit(row: &str, reverse: bool) -> Result<u32> {
+    let valid_digits = if !reverse {
+        ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+    } else {
+        ["eno", "owt", "eerht", "ruof", "evif", "xis", "neves", "thgie", "enin"]
+    };
 
-    let valid_digits = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
     let mut char_skip_count = 0;
     for (index, i) in row.chars().enumerate() {
@@ -22,8 +21,8 @@ fn get_calibration(row: &str) -> Result<u32> {
             continue;
         }
         if i.is_digit(10) {
-            digits.push(i.to_digit(10).unwrap());
-            continue;
+            return Ok(i.to_digit(10).unwrap());
+
         }
         // 6 comes from max length of &str in valid_digits + 1. 
         for cur_length in 1..6 {
@@ -33,23 +32,23 @@ fn get_calibration(row: &str) -> Result<u32> {
             let test_s = &row[index..(index+cur_length)];
             let p = valid_digits.iter().position(|f| f == &test_s);
             if let Some(index) = p {
-                digits.push((index + 1) as u32);
-                char_skip_count += cur_length-1;
-                break;
+                return Ok((index + 1) as u32);
             }
         }
     }
+        return Err(Error::MissingCalibration);
+}
 
-    println!("Digits: {:?}", digits);
-    if digits.is_empty() {
-        Err(Error::MissingCalibration)
-    } else if digits.len() == 1 {
-        let result = digits[0] * 10 + digits[0];
-        Ok(result)
-    } else {
-        let result = digits[0] * 10 + digits[digits.len()-1];
-        Ok(result)
-    }
+/// given an input string returns the first
+/// and last decimal digit found as a numeric,
+/// first digit from is tens place.
+fn get_calibration(row: &str) -> Result<u32> {
+    println!("Row: {}", row);
+
+    let d = get_first_digit(row, false)?;
+    let reverse : String  = row.chars().rev().collect();
+    let l = get_first_digit(&reverse, true)?;
+     Ok(10 * d + l)
 }
 
 fn get_total_calibrations(input: &str) -> u32 {
